@@ -1,4 +1,4 @@
-# two_state_fast.py
+# two_state_naive.py
 
 import sys
 from ete3 import Tree, faces, AttrFace, TreeStyle
@@ -21,15 +21,12 @@ with open(inputFileName, 'r') as f:
 
     B = []
 
-    #print('Initial matrix:')
-
     for line in f:
         chars = line.rstrip().split(' ')
         row = [int(c) for c in chars]
         if len(row) != mutations:
             raise IOError('Error: incorrect number of mutations')
         B.append(row)
-        #print(row)
 
     if len(B) != cells:
         raise IOError('Error: incorrect number of cells')
@@ -46,36 +43,21 @@ def taxa_with_mutation(m):
 mut_order = sorted(range(mutations), key=taxa_with_mutation, reverse=True)
 
 #print(mut_order)
-#print('\nSorted matrix:')
 
 # Create sorted binary mutation matrix
 Bs = []
 for row in B:
     Bs.append([row[mut_order[i]] for i in range(mutations)])
-    #print(Bs[-1])
 
 #print(Bs)
 
 # T is the root of the (currently-empty) tree we're building.
 T = Tree(name='root')
 
-# Create an array of the nodes that each mutation occurs at
-mut_node = [None] * mutations
-
-# Create an array telling whether each mutation creates a conflict
-conflicts = [False] * mutations
-
-# And a flag for whether the given matrix permitted a perfect phylogeny
-perfect = True
-
-# And a count of the number of mutations removed/ignored
-muts_removed = 0
-
 for cell in range(cells):
     node = T # start at root
     for m in range(mutations): # For each possible mutation
-        # If the cell doesn't have the mutation or it creates a conflict
-        if not Bs[cell][m] or conflicts[m]:
+        if not Bs[cell][m]:  # If the cell doesn't have the mutation
             continue     # Move on
         # If the cell does have the mutation:
         edge_exists = False
@@ -86,29 +68,15 @@ for cell in range(cells):
                 edge_exists = True
                 break
         if not edge_exists:
-            # If the node for the mutation exists elsewhere, we have a conflict
-            if mut_node[m] is not None:
-                conflicts[m] = True
-                perfect = False
-                mut_node[m].delete()
-                muts_removed += 1
-                print('Conflict found for mutation', m)
-            else:
-                # If no matching mutation was found, create a new path:
-                child = node.add_child(name=m)
-                node = child
-                mut_node[m] = node
+            # If no matching mutation was found, create a new path:
+            child = node.add_child(name=m)
+            node = child
 
     # Once we've gotten through all the mutations,
     # add the leaf node for the cell
     node.add_child(name=('C' + str(cell)))
 
-print(T) # aaaand we're done! I hope.
-if perfect:
-    print('Perfect phylogeny found!')
-else:
-    print('Conflicts present, removed', muts_removed,
-          'mutations to construct phylogeny')
+#print(T) # aaaand we're done! I hope.
 
 # The following makes it show internal nodes
 def my_layout(node):
