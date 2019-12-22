@@ -1,6 +1,9 @@
 # I love macs
 .DS_Store
 
+# Output image
+tree.png
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
