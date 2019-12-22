@@ -6,11 +6,17 @@ from ete3 import Tree, faces, AttrFace, TreeStyle
 # Default input and output files
 inputFileName = 'data/perfect_phylogeny/m25_n25_s1.txt'
 outputFileName = 'tree.png'
+method = 'accurate'
 # Get input and output files from command-line arguments
 if (len(sys.argv) >= 2):
     inputFileName = sys.argv[1]
 if (len(sys.argv) >= 3):
     outputFileName = sys.argv[2]
+if (len(sys.argv) >= 4):
+    method = sys.argv[3]  # 'accurate' or 'fast'
+
+if method != 'accurate' and method != 'fast':
+    raise IOError(method + ' is not a valid method, input "fast" or "accurate"')
 
 # Create binary mutation matrix B from the input file
 with open(inputFileName, 'r') as f:
@@ -59,24 +65,27 @@ print('\nConflict matrix:')
 for row in conflicts:
     print(row)
 
-def num_conflicts(m):
-    return sum(conflicts[m])
+if method == 'fast':
+    def num_conflicts(m):
+        return sum(conflicts[m])
 
-mut_order = sorted(range(mutations), key=num_conflicts, reverse=True)
+    mut_order = sorted(range(mutations), key=num_conflicts, reverse=True)
 
-sorted_conflicts = []
-for i in range(mutations):
-    sorted_conflicts.append([0] * mutations)
+    sorted_conflicts = []
+    for i in range(mutations):
+        sorted_conflicts.append([0] * mutations)
 
-for i in range(mutations):
-    for j in range(mutations):
-        sorted_conflicts[i][j] = conflicts[mut_order[i]][mut_order[j]]
+        for i in range(mutations):
+            for j in range(mutations):
+                sorted_conflicts[i][j] = conflicts[mut_order[i]][mut_order[j]]
 
-print('\nSorted conflict matrix:')
-for row in sorted_conflicts:
-    print(row)
+    print('\nSorted conflict matrix:')
+    for row in sorted_conflicts:
+        print(row)
+    conflicts = sorted_conflicts
+else:
+    mut_order = list(range(mutations))
 
-conflicts = sorted_conflicts
 
 # count of the number of mutations removed/ignored
 muts_removed = 0
@@ -84,12 +93,14 @@ muts_removed = 0
 while True:
     # Find the character i with the most conflicts
     # Faster method
-    #i = 0
-    #while i+1 < len(conflicts) and sum(conflicts[i]) <= sum(conflicts[i+1]):
-    #    i += 1
+    if method == 'fast':
+        i = 0
+        while i+1 < len(conflicts) and sum(conflicts[i]) <= sum(conflicts[i+1]):
+            i += 1
     # Accurate method (sorting is unnecessary for this one)
-    f = lambda x: sum(conflicts[x])
-    i = max(range(len(conflicts)), key=f)
+    else:
+        f = lambda x: sum(conflicts[x])
+        i = max(range(len(conflicts)), key=f)
     # Exit loop if there aren't any conflicts
     if sum(conflicts[i]) == 0:
         break
@@ -98,23 +109,27 @@ while True:
     for row in conflicts:
         del row[i]
     del mut_order[i]
+    if method == 'accurate':
+        for row in B:
+            del row[i]
     muts_removed += 1
+    print('Deleted mutation', i)
 
 print('\nTrimmed conflict matrix:')
-for row in sorted_conflicts:
+for row in conflicts:
     print(row)
 
 print('Mutations removed:', muts_removed)
 
+if method == 'fast':
+    Bcf =[] # conflict-free matrix
+    print('\nConflict-free matrix:')
+    for cell in range(cells):
+        row = [B[cell][j] for j in mut_order]
+        Bcf.append(row)
+        print(row)
 
-Bcf =[] # conflict-free matrix
-print('\nConflict-free matrix:')
-for cell in range(cells):
-    row = [B[cell][j] for j in mut_order]
-    Bcf.append(row)
-    print(row)
-
-B = Bcf # replace matrix
+    B = Bcf # replace matrix
 
 mutations = len(mut_order)
 
@@ -126,32 +141,25 @@ def taxa_with_mutation(m):
     return count
 
 # Determine order the mutations should be in, most frequent first
-mut_order = sorted(range(mutations), key=taxa_with_mutation, reverse=True)
+mut_order_2 = sorted(range(mutations), key=taxa_with_mutation, reverse=True)
 
-#print(mut_order)
+#print(mut_order_2)
 print('\nSorted matrix:')
 
 # Create sorted binary mutation matrix
 Bs = []
 for row in B:
-    Bs.append([row[mut_order[i]] for i in range(mutations)])
+    Bs.append([row[mut_order_2[i]] for i in range(mutations)])
     print(Bs[-1])
 
 # T is the root of the (currently-empty) tree we're building.
 T = Tree(name='root')
 
-# Create an array of the nodes that each mutation occurs at
-mut_node = [None] * mutations
-
-# Create an array telling whether each mutation creates a conflict
-conflicts = [False] * mutations
-
-
 for cell in range(cells):
     node = T # start at root
     for m in range(mutations): # For each possible mutation
         # If the cell doesn't have the mutation or it creates a conflict
-        if not Bs[cell][m] or conflicts[m]:
+        if not Bs[cell][m]:
             continue     # Move on
         # If the cell does have the mutation:
         edge_exists = False
@@ -162,19 +170,9 @@ for cell in range(cells):
                 edge_exists = True
                 break
         if not edge_exists:
-            # If the node for the mutation exists elsewhere, we have a conflict
-            if mut_node[m] is not None:
-                conflicts[m] = True
-                perfect = False
-                mut_node[m].delete()
-                muts_removed += 1
-                print('Conflict found for mutation', m)
-                print('Something has gone horribly wrong')
-            else:
-                # If no matching mutation was found, create a new path:
-                child = node.add_child(name=m)
-                node = child
-                mut_node[m] = node
+            # If no matching mutation was found, create a new path:
+            child = node.add_child(name=m)
+            node = child
 
     # Once we've gotten through all the mutations,
     # add the leaf node for the cell
@@ -189,6 +187,8 @@ else:
 
 # The following makes it show internal nodes
 def my_layout(node):
+    if hasattr(node, 'has_face'):
+        return
     if node.is_leaf():
          # If terminal node, draws its name
          name_face = AttrFace("name", fsize=12)
@@ -197,6 +197,7 @@ def my_layout(node):
          # If internal node, draws label with smaller font size
          name_face = AttrFace("name", fsize=10)
          node.add_face(name_face, column=0, position="branch-top")
+    node.add_feature('has_face', True)
     # Adds the name face to the image at the preferred position
     #faces.add_face_to_node(name_face, node, column=0, position="branch-top")
 
@@ -207,3 +208,4 @@ ts.show_leaf_name = False
 ts.layout_fn = my_layout
 
 T.show(tree_style=ts)
+T.render(outputFileName, tree_style=ts, dpi=180)
