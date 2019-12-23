@@ -1,7 +1,7 @@
 # two_state_fast.py
 
 import sys
-from ete3 import Tree, faces, AttrFace, TreeStyle
+from ete3 import Tree
 import util
 
 # Default input and output files
@@ -73,7 +73,7 @@ for cell in range(cells):
                 perfect = False
                 mut_node[m].delete()
                 muts_removed += 1
-                print('Conflict found for mutation', m)
+                #print('Conflict found for mutation', m)
             else:
                 # If no matching mutation was found, create a new path:
                 child = node.add_child(name=m)
@@ -84,11 +84,12 @@ for cell in range(cells):
     # add the leaf node for the cell
     node.add_child(name=('C' + str(cell)))
 
-print(T) # aaaand we're done! I hope.
+#print(T) # aaaand we're done! I hope.
 if perfect:
     print('Perfect phylogeny found!')
 else:
-    print('Conflicts present, removed', muts_removed,
-          'mutations to construct phylogeny')
+    #print('Conflicts present, removed', muts_removed,
+    #      'mutations to construct phylogeny')
+    print(muts_removed)
 
-util.show_and_render_tree(T, output_file_name)
+#util.show_and_render_tree(T, output_file_name)

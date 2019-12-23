@@ -7,17 +7,17 @@ import util
 # Default input and output files
 input_file_name = 'data/perfect_phylogeny/m25_n25_s1.txt'
 output_file_name = 'tree.png'
-method = 'accurate'
+method = 'maximum'
 # Get input and output files from command-line arguments
 if (len(sys.argv) >= 2):
     input_file_name = sys.argv[1]
 if (len(sys.argv) >= 3):
     output_file_name = sys.argv[2]
 if (len(sys.argv) >= 4):
-    method = sys.argv[3]  # 'accurate' or 'fast'
+    method = sys.argv[3]  # 'maximum' or 'sort'
 
-if method != 'accurate' and method != 'fast':
-    raise IOError(method + ' is not a valid method, input "fast" or "accurate"')
+if method != 'maximum' and method != 'sort':
+    raise IOError(method + ' is not a valid method, input "sort" or "maximum"')
 
 # Create binary mutation matrix B from the input file
 B, cells, mutations = util.read_matrix_from_file(input_file_name)
@@ -42,11 +42,11 @@ for m1 in range(mutations):
             conflicts[m1][m2] = 1
             conflicts[m2][m1] = 1
 
-print('\nConflict matrix:')
-for row in conflicts:
-    print(row)
+#print('\nConflict matrix:')
+#for row in conflicts:
+    #print(row)
 
-if method == 'fast':
+if method == 'sort':
     def num_conflicts(m):
         return sum(conflicts[m])
 
@@ -60,9 +60,9 @@ if method == 'fast':
             for j in range(mutations):
                 sorted_conflicts[i][j] = conflicts[mut_order[i]][mut_order[j]]
 
-    print('\nSorted conflict matrix:')
-    for row in sorted_conflicts:
-        print(row)
+    #print('\nSorted conflict matrix:')
+    #for row in sorted_conflicts:
+        #print(row)
     conflicts = sorted_conflicts
 else:
     mut_order = list(range(mutations))
@@ -74,11 +74,11 @@ muts_removed = 0
 while True:
     # Find the character i with the most conflicts
     # Faster method
-    if method == 'fast':
+    if method == 'sort':
         i = 0
         while i+1 < len(conflicts) and sum(conflicts[i]) <= sum(conflicts[i+1]):
             i += 1
-    # Accurate method (sorting is unnecessary for this one)
+    # Maximum method (sorting is unnecessary for this one)
     else:
         f = lambda x: sum(conflicts[x])
         i = max(range(len(conflicts)), key=f)
@@ -90,25 +90,25 @@ while True:
     for row in conflicts:
         del row[i]
     del mut_order[i]
-    if method == 'accurate':
+    if method == 'maximum':
         for row in B:
             del row[i]
     muts_removed += 1
-    print('Deleted mutation', i)
+    #print('Deleted mutation', i)
 
-print('\nTrimmed conflict matrix:')
-for row in conflicts:
-    print(row)
+#print('\nTrimmed conflict matrix:')
+#for row in conflicts:
+    #print(row)
 
-print('Mutations removed:', muts_removed)
+#print('Mutations removed:', muts_removed)
 
-if method == 'fast':
+if method == 'sort':
     Bcf =[] # conflict-free matrix
-    print('\nConflict-free matrix:')
+    #print('\nConflict-free matrix:')
     for cell in range(cells):
         row = [B[cell][j] for j in mut_order]
         Bcf.append(row)
-        print(row)
+        #print(row)
 
     B = Bcf # replace matrix
 
@@ -125,13 +125,13 @@ def taxa_with_mutation(m):
 mut_order_2 = sorted(range(mutations), key=taxa_with_mutation, reverse=True)
 
 #print(mut_order_2)
-print('\nSorted matrix:')
+#print('\nSorted matrix:')
 
 # Create sorted binary mutation matrix
 Bs = []
 for row in B:
     Bs.append([row[mut_order_2[i]] for i in range(mutations)])
-    print(Bs[-1])
+    #print(Bs[-1])
 
 # T is the root of the (currently-empty) tree we're building.
 T = Tree(name='root')
@@ -163,7 +163,8 @@ for cell in range(cells):
 if muts_removed == 0:
     print('Perfect phylogeny found!')
 else:
-    print('Conflicts present, removed', muts_removed,
-          'mutations to construct phylogeny')
+    #print('Conflicts present, removed', muts_removed,
+    #      'mutations to construct phylogeny')
+    print(muts_removed)
 
-util.show_and_render_tree(T, output_file_name)
+#util.show_and_render_tree(T, output_file_name)

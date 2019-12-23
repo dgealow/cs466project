@@ -13,7 +13,7 @@ def read_matrix_from_file(input_file_name):
 
         B = []
 
-        print('Initial matrix:')
+        #print('Initial matrix:')
 
         for line in f:
             chars = line.rstrip().split(' ')
@@ -21,7 +21,7 @@ def read_matrix_from_file(input_file_name):
             if len(row) != mutations:
                 raise IOError('Error: incorrect number of mutations')
             B.append(row)
-            print(row)
+            #print(row)
 
         if len(B) != cells:
             raise IOError('Error: incorrect number of cells')
