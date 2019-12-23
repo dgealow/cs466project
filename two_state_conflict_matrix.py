@@ -82,13 +82,14 @@ muts_removed = 0
 
 while True:
     # Find the character i with the most conflicts
-    # Faster method
+    # Faster? method
     if method == 'sort':
         i = 0
         while i+1 < len(conflicts) and sum(conflicts[i]) <= sum(conflicts[i+1]):
             i += 1
-    # Maximum method (sorting is unnecessary for this one)
+    # Maximum method (more accurate, sorting is unnecessary for this one)
     else:
+        # Find row with the maximum number of conflicts
         f = lambda x: sum(conflicts[x])
         i = max(range(len(conflicts)), key=f)
     # Exit loop if there aren't any conflicts
