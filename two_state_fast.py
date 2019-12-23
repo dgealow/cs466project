@@ -88,8 +88,8 @@ for cell in range(cells):
 if perfect:
     print('Perfect phylogeny found!')
 else:
-    #print('Conflicts present, removed', muts_removed,
-    #      'mutations to construct phylogeny')
-    print(muts_removed)
+    print('Conflicts present, removed', muts_removed,
+          'mutations to construct phylogeny')
+    #print(muts_removed)
 
-#util.show_and_render_tree(T, output_file_name)
+util.show_and_render_tree(T, output_file_name)

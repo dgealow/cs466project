@@ -16,6 +16,15 @@ if (len(sys.argv) >= 3):
 if (len(sys.argv) >= 4):
     method = sys.argv[3]  # 'maximum' or 'sort'
 
+# The 'sort' method is a related heuristic we came up with that may or may not
+# run slightly faster than the default 'maximum' method. Briefly, it sorts the
+# conflict matrix so that the characters with the most conflicts are first; then
+# it removes the first row that has more conflicts than the one after it. Since
+# the matrix is initially sorted, this should usually delete the row with the
+# most conflicts and should usually find it after checking only the first few
+# columns. We ignored it for our report since the 'maximum' method, which checks
+# rigorously for the maximum, is easier to explain and to calculate the runtime.
+
 if method != 'maximum' and method != 'sort':
     raise IOError(method + ' is not a valid method, input "sort" or "maximum"')
 
@@ -139,9 +148,9 @@ T = Tree(name='root')
 for cell in range(cells):
     node = T # start at root
     for m in range(mutations): # For each possible mutation
-        # If the cell doesn't have the mutation or it creates a conflict
+        # If the cell doesn't have the mutation, move on
         if not Bs[cell][m]:
-            continue     # Move on
+            continue
         # If the cell does have the mutation:
         edge_exists = False
         for child in node.children: # Search through children of current node
@@ -163,8 +172,8 @@ for cell in range(cells):
 if muts_removed == 0:
     print('Perfect phylogeny found!')
 else:
-    #print('Conflicts present, removed', muts_removed,
-    #      'mutations to construct phylogeny')
-    print(muts_removed)
+    print('Conflicts present, removed', muts_removed,
+          'mutations to construct phylogeny')
+    #print(muts_removed)
 
-#util.show_and_render_tree(T, output_file_name)
+util.show_and_render_tree(T, output_file_name)
