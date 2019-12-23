@@ -1,7 +1,7 @@
 # util.py
 
 import sys
-from ete3 import Tree, faces, AttrFace, TreeStyle
+from ete3 import Tree, faces, AttrFace, TextFace, TreeStyle
 
 def read_matrix_from_file(input_file_name):
     # Create binary mutation matrix B from the input file
@@ -28,23 +28,27 @@ def read_matrix_from_file(input_file_name):
     # close input file
     return B, cells, mutations
 
-# The following makes it show internal nodes
-def my_layout(node):
-    if hasattr(node, 'has_face'):
-        return
-    if node.is_leaf():
-         # If terminal node, draws its name
-         name_face = AttrFace("name", fsize=12)
-         node.add_face(name_face, column=0, position="branch-right")
-    else:
-         # If internal node, draws label with smaller font size
-         name_face = AttrFace("name", fsize=10)
-         node.add_face(name_face, column=0, position="branch-top")
-    node.add_feature('has_face', True)
+
+def show_and_render_tree(tree, output_file_name, mut_order):
+    # The following makes it show internal nodes
+    def my_layout(node):
+        if hasattr(node, 'has_face'):
+            return
+        if node.is_leaf():
+            # If terminal node, draws its name
+            name_face = AttrFace("name", fsize=12)
+            node.add_face(name_face, column=0, position="branch-right")
+        else:
+            # If internal node, draws label with smaller font size
+            if node.name == 'root':
+                label = 'root'
+            else:
+                label = str(mut_order[int(node.name)])
+            name_face = TextFace(label, fsize=10)
+            node.add_face(name_face, column=0, position="branch-top")
+        node.add_feature('has_face', True)
     # Adds the name face to the image at the preferred position
     #faces.add_face_to_node(name_face, node, column=0, position="branch-top")
-
-def show_and_render_tree(tree, output_file_name):
     ts = TreeStyle()
     # Do not add leaf names automatically
     ts.show_leaf_name = False

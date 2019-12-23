@@ -177,4 +177,6 @@ else:
           'mutations to construct phylogeny')
     #print(muts_removed)
 
-util.show_and_render_tree(T, output_file_name)
+final_mut_order = [mut_order[i] for i in mut_order_2]
+
+util.show_and_render_tree(T, output_file_name, final_mut_order)

@@ -62,4 +62,4 @@ for cell in range(cells):
 
 #print(T) # aaaand we're done! I hope.
 
-util.show_and_render_tree(T, output_file_name)
+util.show_and_render_tree(T, output_file_name, mut_order)
